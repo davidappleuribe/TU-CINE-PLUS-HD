@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TU CINE PLUS HD 🎬</title>
+
+  <!-- 🧾 Meta verificación -->
+  <meta name="google-adsense-account" content="ca-pub-7859862485920488">
+  <meta name="description" content="TU CINE PLUS HD — Trailers y contenido audiovisual gratuito y legal. Disfruta de avances de películas en HD.">
+  <meta name="author" content="David Apple Uribe">
+
+  <!-- 🎨 Estilos básicos -->
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    header {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo {
+      color: #e50914;
+      font-size: 26px;
+      font-weight: bold;
+    }
+    #movies {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 15px;
+      padding: 20px;
+    }
+    .card {
+      background: #1c1c1c;
+      border-radius: 10px;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+    .card:hover {
+      transform: scale(1.05);
+    }
+    .card img {
+      width: 100%;
+      height: 230px;
+      object-fit: cover;
+      border-radius: 10px 10px 0 0;
+    }
+    .card p {
+      text-align: center;
+      padding: 8px;
+      font-size: 14px;
+    }
+    .ad-block {
+      text-align: center;
+      margin: 25px auto;
+    }
+    #player {
+      width: 90%;
+      max-width: 900px;
+      height: 500px;
+    }
+    #tv {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 9999;
+    }
+    .controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    .controls button {
+      background: #e50914;
+      border: none;
+      padding: 10px 20px;
+      color: #fff;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo">🎬 TU CINE PLUS HD</div>
+  </header>
+
+  <!-- 🔝 Anuncio superior -->
+  <div class="ad-block">
+    <!-- 👉 Aquí irá tu bloque de AdSense -->
+    <!-- Ejemplo:
+    <ins class="adsbygoogle"
+         style="display:inline-block;width:728px;height:90px"
+         data-ad-client="ca-pub-7859862485920488"
+         data-ad-slot="6600521134"></ins>
+    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+    -->
+  </div>
+
+  <!-- 🎥 Contenedor de películas -->
+  <div id="movies"></div>
+  <div id="sentinel"></div>
+
+  <!-- 📺 Reproductor -->
+  <div id="tv" style="display:none;">
+    <div id="player"></div>
+    <div class="controls">
+      <button onclick="skip()">⏭ Siguiente</button>
+    </div>
+
+    <!-- 🔸 Espacio para anuncio dentro del video -->
+    <div class="ad-block">
+      <!-- 👉 Aquí insertarás tu script de Monetag o AdSense en video -->
+    </div>
+  </div>
+
+  <!-- 🔻 Anuncio inferior -->
+  <div class="ad-block">
+    <!-- 👉 Aquí irá otro bloque publicitario (AdSense o Monetag) -->
+  </div>
+
+  <!-- 🎞️ Scripts funcionales -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    const OMDB_KEY = "d58f0933";
+    const TMDB_KEY = "a75df45f5957e88b88043e6e9558b941";
+    let playlist = [], page = 1, index = -1, player;
+
+    const introVideoId = "8ZcmTl_1ER8"; // Video de introducción
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player("player", {
+        playerVars: { autoplay: 1, controls: 1, rel: 0, mute: 1, playsinline: 1 },
+        events: {
+          onReady: () => { play(introVideoId); },
+          onStateChange: e => {
+            if (e.data === 0) {
+              if (index === -1) {
+                index = 0;
+                playTrailer(playlist[index]);
+              } else {
+                next();
+              }
+            }
+          },
+          onError: () => next()
+        }
+      });
+    }
+
+    function play(id) { player.loadVideoById(id); }
+    function skip() { next(); }
+
+    async function next() {
+      index++;
+      if (index >= playlist.length) await load();
+      if (playlist[index]) playTrailer(playlist[index]);
+    }
+
+    async function playTrailer(imdb) {
+      try {
+        const res = await fetch(`https://api.themoviedb.org/3/find/${imdb}?api_key=${TMDB_KEY}&external_source=imdb_id`);
+        const data = await res.json();
+        const movie = data.movie_results[0];
+        if (!movie) return next();
+
+        const vids = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}`);
+        const vd = await vids.json();
+
+        const trailer = vd.results.find(x => x.site === "YouTube" && ["Trailer", "Clip"].includes(x.type));
+        if (trailer) play(trailer.key);
+        else next();
+      } catch {
+        next();
+      }
+    }
+
+    async function load() {
+      try {
+        const res = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=movie&type=movie&page=${page}`);
+        const data = await res.json();
+        if (data.Response === "True") {
+          data.Search.forEach(m => {
+            playlist.push(m.imdbID);
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `<img src="${m.Poster}" alt="${m.Title}"><p>${m.Title}</p>`;
+            card.onclick = () => { index = playlist.indexOf(m.imdbID); playTrailer(m.imdbID); };
+            movies.appendChild(card);
+          });
+          page++;
+        }
+      } catch (e) {
+        console.error("Error cargando películas:", e);
+      }
+    }
+
+    new IntersectionObserver(e => e[0].isIntersecting && load(), { threshold: 0.1 }).observe(sentinel);
+    window.onload = async () => { await load(); };
+  </script>
+</body>
+</html>
