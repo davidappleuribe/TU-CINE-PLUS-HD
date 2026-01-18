@@ -1,0 +1,3 @@
+# Autorizaciones de vendedores de anuncios
+google.com, pub-7859862485920488, DIRECT, f08c47fec0942fa0
+monetag.com, pub-10480557, DIRECT
